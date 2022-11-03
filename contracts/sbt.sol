@@ -4,13 +4,13 @@ pragma solidity ^0.8.17;
 import "./sbt-achievements.sol";
 
 contract SBT {
-    modifier soulExists(uint _addr) {
-        require(_addr != 0, "Soul doesn't exist");
+    modifier soulExists(uint _soul_id) {
+        require(addressOfSoul[_soul_id] == address(0), "Already has a soul");
         _;
     }
 
-    modifier soulDoesntExist(uint _addr) {
-        require(_addr == 0, "Soul exists");
+    modifier soulDoesntExist(uint _soul_id) {
+        require(addressOfSoul[_soul_id] != address(0), "Already has a soul");
         _;
     }
 
@@ -22,72 +22,70 @@ contract SBT {
 
     struct Soul {
         uint soul_id;
-        // PersonalData data;
-        string url;
+        PersonalData data;
     }
-    // TODO: later
-    // mapping (uint => SBT_achievement[]) private soulAchievements; // uint = soul_id of Soul
-    mapping(address => Soul) private souls;
-    mapping(uint => address) private ownerOfSoul;
 
     address public operator;
-
     event Mint(address _soul);
-    event Burn(address _soul);
-    event Update(address _soul);
-    event SetProfile(address _profiler, address _soul);
-    event RemoveProfile(address _profiler, address _soul);
+    event Burn(uint _soul_id_to_burn);
+    event Update(uint _soul_id_to_update);
 
     constructor() {
         operator = msg.sender;
     }
 
+    mapping(uint => address) addressOfSoul; //soul_id => address of owner
+    mapping(address => uint) soulOfAddress; //address => soul_id
+    mapping(uint => Soul) souls;
+
+    // Mints the SBT for given address and with given soul_id. Can be called only by this contract.
     function mint(
-        address _soul,
+        address _soul_address,
         uint _soul_id,
-        string memory _soulData
-        // PersonalData memory _soulData
-    ) external soulDoesntExist(souls[_soul].soul_id) {
+        PersonalData memory _soulData
+    ) external soulDoesntExist(_soul_id) {
         require(msg.sender == operator, "Only operator can mint new souls");
-        // souls[_soul].data = _soulData;
-        souls[_soul].url = _soulData;
-        souls[_soul].soul_id = _soul_id;
-        ownerOfSoul[_soul_id] = _soul;
-        emit Mint(_soul);
+        addressOfSoul[_soul_id] = _soul_address;
+        soulOfAddress[_soul_address] = _soul_id;
+        souls[_soul_id].soul_id = _soul_id;
+        souls[_soul_id].data = _soulData;
+        emit Mint(_soul_address);
     }
 
-    function burn(address _soul) external {
-        require(
-            msg.sender == _soul,
-            "Only users have rights to delete their data"
-        );
-        delete ownerOfSoul[souls[_soul].soul_id];
-        delete souls[_soul];
-        emit Burn(_soul);
+    // Deletes SBT of msg.sender from storage.
+    function burn(uint _soul_id_to_burn) external {
+        delete souls[_soul_id_to_burn];
+        delete soulOfAddress[addressOfSoul[_soul_id_to_burn]];
+        delete addressOfSoul[_soul_id_to_burn];
+        emit Burn(_soul_id_to_burn);
     }
 
-    function update(address _soul, PersonalData memory _soulData)
+    // Updates data of msg.sender's SBT by replacing with '_newSoulData'.
+    function update(PersonalData memory _newSoulData)
         external
-        soulExists(souls[_soul].soul_id)
+        soulExists(soulOfAddress[msg.sender])
     {
-        require(
-            ownerOfSoul[souls[_soul].soul_id] == msg.sender,
-            "Only owner can update their soul data"
-        );
-        souls[_soul].url = _soulData.url;
-        // souls[_soul].data = _soulData;
-        emit Update(_soul);
+        souls[soulOfAddress[msg.sender]].data = _newSoulData;
+        emit Update(soulOfAddress[msg.sender]);
     }
 
+    // Returns true, if there is an SBT for given address.
     function hasSoul(address _soul) external view returns (bool) {
-        return souls[_soul].soul_id != 0;
+        return soulOfAddress[_soul] != 0;
     }
 
+    // Returns SBT of given address, if there is one; otherwise throws an error.
     function getSoul(address _soul) external view returns (Soul memory) {
-        return souls[_soul];
+        require(soulOfAddress[_soul] != 0, "Soul doesn't exist");
+        return souls[soulOfAddress[_soul]];
     }
 
+    // Returns owner of given '_soul_id', if there is one; otherwise returns NULL-address.
     function getOwner(uint _soul_id) external view returns (address) {
-        return ownerOfSoul[_soul_id];
+        require(
+            msg.sender == operator,
+            "Only this contract can view this data"
+        );
+        return addressOfSoul[_soul_id];
     }
 }
