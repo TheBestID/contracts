@@ -14,6 +14,12 @@ contract SBT {
         _;
     }
 
+    struct PersonalDataHashed {
+        bytes32 url_hash;
+        bytes32 github_url_hash;
+        bytes32 email_address_hash;
+    }
+
     struct PersonalData {
         string url;
         string github_url;
@@ -22,7 +28,7 @@ contract SBT {
 
     struct Soul {
         uint soul_id;
-        PersonalData data;
+        PersonalDataHashed hashedData;
     }
 
     address public operator;
@@ -38,6 +44,15 @@ contract SBT {
     mapping(address => uint) soulOfAddress; //address => soul_id
     mapping(uint => Soul) souls;
 
+    // Function that hashes content of user's hashedData. Must be rewritten if PersonalData fields change.
+    function hashPersonalData(PersonalData memory _data) internal pure returns(PersonalDataHashed memory) {
+        PersonalDataHashed memory hashedData;
+        hashedData.email_address_hash = keccak256(abi.encodePacked(_data.email_address));
+        hashedData.github_url_hash = keccak256(abi.encodePacked(_data.github_url));
+        hashedData.url_hash = keccak256(abi.encodePacked(_data.url));
+        return hashedData;
+    }
+
     // Mints the SBT for given address and with given soul_id. Can be called only by this contract.
     function mint(
         address _soul_address,
@@ -48,7 +63,7 @@ contract SBT {
         addressOfSoul[_soul_id] = _soul_address;
         soulOfAddress[_soul_address] = _soul_id;
         souls[_soul_id].soul_id = _soul_id;
-        souls[_soul_id].data = _soulData;
+        souls[_soul_id].hashedData = hashPersonalData(_soulData);
         emit Mint(_soul_address);
     }
 
@@ -60,12 +75,12 @@ contract SBT {
         emit Burn(_soul_id_to_burn);
     }
 
-    // Updates data of msg.sender's SBT by replacing with '_newSoulData'.
-    function update(PersonalData memory _newSoulData)
+    // Updates hashedData of msg.sender's SBT by replacing with '_newSoulData'.
+    function update(PersonalDataHashed memory _newSoulData)
         external
         soulExists(soulOfAddress[msg.sender])
     {
-        souls[soulOfAddress[msg.sender]].data = _newSoulData;
+        souls[soulOfAddress[msg.sender]].hashedData = _newSoulData;
         emit Update(soulOfAddress[msg.sender]);
     }
 
@@ -84,8 +99,24 @@ contract SBT {
     function getOwner(uint _soul_id) external view returns (address) {
         require(
             msg.sender == operator,
-            "Only this contract can view this data"
+            "Only this contract can view this hashedData"
         );
         return addressOfSoul[_soul_id];
     }
+
+    // Allows user to verify, that their data stored in our app is it's own and doesn't change.
+    function verifyDataCorrectness(PersonalData memory _dataToVerify) external view returns (bool) {
+        PersonalDataHashed memory hashedDataFromStorage = souls[soulOfAddress[msg.sender]].hashedData;
+        PersonalDataHashed memory hashedDataToVerify = hashPersonalData(_dataToVerify);
+        if (hashedDataToVerify.email_address_hash != hashedDataFromStorage.email_address_hash) {
+            return false;
+        }
+        if (hashedDataToVerify.github_url_hash != hashedDataFromStorage.github_url_hash) {
+            return false;
+        }
+        if (hashedDataToVerify.url_hash != hashedDataFromStorage.url_hash) {
+            return false;
+        }
+        return true;
+    } 
 }
