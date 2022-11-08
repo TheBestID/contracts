@@ -3,21 +3,46 @@ pragma solidity ^0.8.17;
 
 // import "./sbt-achievements.sol";
 
+interface SBT_achievement_interface {
+    struct Achievement {
+        uint achievement_id;
+        uint achievement_type;
+        address issuer;
+        bool can_owner_be_changed;
+        address owner;
+        address verifier;
+        bool is_verified;
+        bytes32 data_hash;
+    }
+
+    function mint(Achievement memory _achievementData) external;
+
+    function burn(uint _achievementId) external;
+
+    function updateOwner(uint _achievementId, address _newOwner) external;
+
+    function changeAchievementVerification(uint _achievementId, bool _newStatus)
+        external;
+}
+
 contract SBT {
     modifier soulExists(uint _soul_id) {
-        require(addressOfSoul[_soul_id] != address(0), "No soul exists");
+        require(addressOfSoul[_soul_id] != address(0), "Soul doesn't exist");
         _;
     }
 
-    modifier mintedNotClaimed(uint _soul_id) {
-        require(minted[_soul_id], "Non minted soul");
-        require(addressOfSoul[_soul_id] == address(0), "Soul is already claimed");
+    modifier mintedNotClaimedModifier(uint _soul_id) {
+        require(
+            addressOfSoul[_soul_id] == address(0),
+            "Soul is already claimed"
+        );
+        require(mintedNotClaimed[_soul_id], "Non minted soul");
         _;
     }
 
-    modifier soulDoesntExist(uint _soul_id) {
+    modifier notMinted(uint _soul_id) {
         require(addressOfSoul[_soul_id] == address(0), "Soul exists");
-        require(!minted[_soul_id], "Soul is minted, but not claimed");
+        require(!mintedNotClaimed[_soul_id], "Soul is minted, but not claimed");
         _;
     }
 
@@ -37,19 +62,26 @@ contract SBT {
     }
 
     address public operator;
+    address public kAchevementsContract =
+        0x8016619281F888d011c84d2E2a5348d9417c775B;
+
+    SBT_achievement_interface SBT_achievement;
     event Mint(uint _soul_id);
     event Claim(uint _soul_id);
+    event MintAchievement(uint _soul_id);
     event Burn(uint _soul_id_to_burn);
     event Update(uint _soul_id_to_update);
+    event SetAchevementsContractAddress(address _new_address);
 
     constructor() {
+        SBT_achievement = SBT_achievement_interface(kAchevementsContract);
         operator = msg.sender;
     }
 
     mapping(uint => address) private addressOfSoul; //soul_id => address of owner
     mapping(address => uint) soulIdOfAddress; //address => soul_id
     mapping(uint => Soul) private souls;
-    mapping(uint => bool) private minted;
+    mapping(uint => bool) private mintedNotClaimed;
 
     // Function that hashes content of user's hashedData. Must be rewritten if PersonalData fields change.
     function hashPersonalData(PersonalData memory _data)
@@ -61,38 +93,54 @@ contract SBT {
         hashedData.email_address_hash = keccak256(
             abi.encodePacked(_data.email_address)
         );
-        hashedData.github_hash = keccak256(
-            abi.encodePacked(_data.github_url)
-        );
+        hashedData.github_hash = keccak256(abi.encodePacked(_data.github_url));
         return hashedData;
+    }
+
+    function setAchevementsContractAddress(address _new_address) external {
+        require(
+            msg.sender == operator,
+            "Only this contract can set this address"
+        );
+        kAchevementsContract = _new_address;
+        emit SetAchevementsContractAddress(_new_address);
     }
 
     // Mints the SBT for given address and with given soul_id. Can be called only by this contract.
     function mint(address _soul_address, uint _soul_id)
         external
-        soulDoesntExist(_soul_id)
+        notMinted(_soul_id)
     {
         require(msg.sender == operator, "Only operator can mint new souls");
         soulIdOfAddress[_soul_address] = _soul_id;
-        minted[_soul_id] = true;
+        mintedNotClaimed[_soul_id] = true;
         emit Mint(_soul_id);
     }
 
+    // After minting and SBT, user must claim ownership of SBT by
     function claim(PersonalDataHashed memory _soulData)
         external
-        mintedNotClaimed(soulIdOfAddress[msg.sender])
+        mintedNotClaimedModifier(soulIdOfAddress[msg.sender])
     {
         uint _soul_id = soulIdOfAddress[msg.sender];
+        delete mintedNotClaimed[_soul_id];
         addressOfSoul[_soul_id] = msg.sender;
         souls[_soul_id].soul_id = _soul_id;
         souls[_soul_id].hashedData = _soulData;
         emit Claim(_soul_id);
     }
 
+    // After minting and SBT, user must claim ownership of SBT by
+    function mint_achievement(
+        SBT_achievement_interface.Achievement memory _achievementData
+    ) external soulExists(soulIdOfAddress[msg.sender]) {
+        SBT_achievement.mint(_achievementData);
+        emit MintAchievement(soulIdOfAddress[msg.sender]);
+    }
+
     // Deletes SBT of msg.sender from storage.
-    function burn() external {
+    function burn() external soulExists(soulIdOfAddress[msg.sender]) {
         uint _soul_id_to_burn = soulIdOfAddress[msg.sender];
-        require(_soul_id_to_burn != 0, "Soul doesn't exist");
         delete souls[_soul_id_to_burn];
         delete soulIdOfAddress[msg.sender];
         delete addressOfSoul[_soul_id_to_burn];
@@ -100,13 +148,13 @@ contract SBT {
     }
 
     // Updates hashedData of msg.sender's SBT by replacing with '_newSoulData'.
-    function update(PersonalDataHashed memory _newSoulData)
-        external
-        soulExists(soulIdOfAddress[msg.sender])
-    {
-        souls[soulIdOfAddress[msg.sender]].hashedData = _newSoulData;
-        emit Update(soulIdOfAddress[msg.sender]);
-    }
+    // function update(PersonalDataHashed memory _newSoulData)
+    //     external
+    //     soulExists(soulIdOfAddress[msg.sender])
+    // {
+    //     souls[soulIdOfAddress[msg.sender]].hashedData = _newSoulData;
+    //     emit Update(soulIdOfAddress[msg.sender]);
+    // }
 
     // Returns true, if there is an SBT for given address.
     function hasSoul(address _soul) external view returns (bool) {
@@ -147,8 +195,7 @@ contract SBT {
             return false;
         }
         if (
-            hashedDataToVerify.github_hash !=
-            hashedDataFromStorage.github_hash
+            hashedDataToVerify.github_hash != hashedDataFromStorage.github_hash
         ) {
             return false;
         }
