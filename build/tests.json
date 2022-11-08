@@ -1,0 +1,18 @@
+{
+  "contracts": {
+    "SBT": "aef6abcc41b59e6a8519619ede66c4a4437d2088",
+    "SBT_achievement": "5a6b7a7ddec8803ad0fcfc8d2d5d1bd10cc7c73f"
+  },
+  "tests": {
+    "tests/test_mint.py": {
+      "coverage": false,
+      "isolated": [
+        "SBT"
+      ],
+      "results": ".",
+      "sha1": "271896d45fb4db961c5322c500371c41894a6af3",
+      "txhash": []
+    }
+  },
+  "tx": {}
+}
