@@ -1,7 +1,12 @@
 #!/usr/bin/python3
 
 import pytest
+from web3 import Web3
 
+hashed_git = Web3.solidityKeccak(
+    ['bytes32'], [bytes('my_git'.encode())])
+hashed_email = Web3.solidityKeccak(
+    ['bytes32'], [bytes('my_email'.encode())])
 
 @pytest.fixture(scope="function", autouse=True)
 def isolate(fn_isolation):

@@ -1,7 +1,7 @@
 {
   "contracts": {
-    "SBT": "aef6abcc41b59e6a8519619ede66c4a4437d2088",
-    "SBT_achievement": "5a6b7a7ddec8803ad0fcfc8d2d5d1bd10cc7c73f"
+    "SBT": "02faf3366e9a7126418bf23c2c84fabd641bca2d",
+    "SBT_achievement": "9e68a15b422dc8260f02019020ad918b329d8c85"
   },
   "tests": {
     "tests/test_mint.py": {
@@ -9,10 +9,32 @@
       "isolated": [
         "SBT"
       ],
-      "results": ".",
-      "sha1": "271896d45fb4db961c5322c500371c41894a6af3",
-      "txhash": []
+      "results": "..",
+      "sha1": "81e954c8057a9ad7809811844f5464dbeacb73b9",
+      "txhash": [
+        "6fd42446bb034176429b4c8e10f357858d1daded",
+        "cd4e94831a0a7133d3540d9e0477336983ff3ec2"
+      ]
     }
   },
-  "tx": {}
+  "tx": {
+    "6fd42446bb034176429b4c8e10f357858d1daded": {
+      "SBT": {
+        "0": [
+          [],
+          [],
+          []
+        ]
+      }
+    },
+    "cd4e94831a0a7133d3540d9e0477336983ff3ec2": {
+      "SBT": {
+        "0": [
+          [],
+          [],
+          []
+        ]
+      }
+    }
+  }
 }
