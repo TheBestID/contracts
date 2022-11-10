@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-// import "./sbt-achievements.sol";
-
 interface SBT_achievement_interface {
     struct Achievement {
         uint achievement_id;
@@ -147,15 +145,6 @@ contract SBT {
         emit Burn(_soul_id_to_burn);
     }
 
-    // Updates hashedData of msg.sender's SBT by replacing with '_newSoulData'.
-    // function update(PersonalDataHashed memory _newSoulData)
-    //     external
-    //     soulExists(soulIdOfAddress[msg.sender])
-    // {
-    //     souls[soulIdOfAddress[msg.sender]].hashedData = _newSoulData;
-    //     emit Update(soulIdOfAddress[msg.sender]);
-    // }
-
     // Returns true, if there is an SBT for given address.
     function hasSoul(address _soul) external view returns (bool) {
         return soulIdOfAddress[_soul] != 0;
@@ -177,28 +166,11 @@ contract SBT {
     }
 
     // Allows user to verify, that their data stored in our app is it's own and doesn't change.
-    function verifyDataCorrectness(PersonalData memory _dataToVerify)
+    function verifyDataCorrectness()
         external
         view
-        returns (bool)
+        returns (PersonalDataHashed memory)
     {
-        PersonalDataHashed memory hashedDataFromStorage = souls[
-            soulIdOfAddress[msg.sender]
-        ].hashedData;
-        PersonalDataHashed memory hashedDataToVerify = hashPersonalData(
-            _dataToVerify
-        );
-        if (
-            hashedDataToVerify.email_address_hash !=
-            hashedDataFromStorage.email_address_hash
-        ) {
-            return false;
-        }
-        if (
-            hashedDataToVerify.github_hash != hashedDataFromStorage.github_hash
-        ) {
-            return false;
-        }
-        return true;
+        return souls[soulIdOfAddress[msg.sender]].hashedData;
     }
 }
