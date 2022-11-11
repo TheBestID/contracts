@@ -1,3 +1,4 @@
 eth-brownie>=1.10.0,<2.0.0
 pysha3
 pytest
+Web3
