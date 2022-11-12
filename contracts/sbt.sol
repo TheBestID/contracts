@@ -1,28 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-interface SBT_achievement_interface {
-    struct Achievement {
-        uint achievement_id;
-        uint achievement_type;
-        address issuer;
-        bool can_owner_be_changed;
-        address owner;
-        address verifier;
-        bool is_verified;
-        bytes32 data_hash;
-    }
-
-    function mint(Achievement memory _achievementData) external;
-
-    function burn(uint _achievementId) external;
-
-    function updateOwner(uint _achievementId, address _newOwner) external;
-
-    function changeAchievementVerification(uint _achievementId, bool _newStatus)
-        external;
-}
-
 contract SBT {
     modifier soulExists(uint _soul_id) {
         require(addressOfSoul[_soul_id] != address(0), "Soul doesn't exist");
@@ -63,7 +41,6 @@ contract SBT {
     address public kAchevementsContract =
         0x8016619281F888d011c84d2E2a5348d9417c775B;
 
-    SBT_achievement_interface SBT_achievement;
     event Mint(uint _soul_id);
     event Claim(uint _soul_id);
     event MintAchievement(uint _soul_id);
@@ -72,7 +49,6 @@ contract SBT {
     event SetAchevementsContractAddress(address _new_address);
 
     constructor() {
-        SBT_achievement = SBT_achievement_interface(kAchevementsContract);
         operator = msg.sender;
     }
 
@@ -128,12 +104,10 @@ contract SBT {
         emit Claim(_soul_id);
     }
 
-    // After minting and SBT, user must claim ownership of SBT by
-    function mint_achievement(
-        SBT_achievement_interface.Achievement memory _achievementData
-    ) external soulExists(soulIdOfAddress[msg.sender]) {
-        SBT_achievement.mint(_achievementData);
-        emit MintAchievement(soulIdOfAddress[msg.sender]);
+    // Passes the user id to the achievement contract
+    function getUserId(address _soul) external soulExists(soulIdOfAddress[msg.sender]) view returns (uint) {
+        require(msg.sender == kAchevementsContract, "Only achievement contract can view id");
+        return soulIdOfAddress[_soul];
     }
 
     // Deletes SBT of msg.sender from storage.
