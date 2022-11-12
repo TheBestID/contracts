@@ -21,12 +21,13 @@ contract SBT_achievement {
         string data_address;
     }
 
+    // [0, 0, 1, false, 0, false, 0, false, "0"]
     mapping (uint => Achievement) private achievements;
     mapping (uint => uint[]) private issuersAchievements;
     mapping (uint => uint[]) private usersAchievements;
 
     address public operator;
-    address public kSBTContract = 0x8016619281F888d011c84d2E2a5348d9417c775B;
+    address public kSBTContract = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
 
     SBT_interface SBT;
     event Mint(uint achievement_id);
@@ -34,14 +35,34 @@ contract SBT_achievement {
     event Update(uint achievement_id);
     event Accept(uint achievement_id);
     event Verify(uint achievement_id);
+    bool SBTContractIsSet;
 
     constructor() {
       operator = msg.sender;
-      SBT = SBT_interface(kSBTContract);
+    //   SBT = SBT_interface(kSBTContract);
+      SBTContractIsSet = false;
     }
 
+    function setSBTContractAddress(address _new_address) external {
+        require(
+            msg.sender == operator,
+            "Only this contract can set this address"
+        );
+        require(
+            SBTContractIsSet == false,
+            "SBT contract address is already set"
+        );
+        kSBTContract = _new_address;
+        SBTContractIsSet = true;
+        SBT = SBT_interface(kSBTContract);
+        // emit SetAchevementsContractAddress(_new_address);
+    }
+
+
     function mint(Achievement memory _achievementData) external {
+        // FIXME: must be unique achievement_id
         require(SBT.getUserId(msg.sender) == _achievementData.issuer, "Only you can be an issuer");
+        achievements[_achievementData.achievement_id] = _achievementData;
         issuersAchievements[_achievementData.issuer].push(_achievementData.achievement_id);
         usersAchievements[_achievementData.owner].push(_achievementData.achievement_id);
         emit Mint(_achievementData.achievement_id);

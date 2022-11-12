@@ -98,7 +98,7 @@ contract SBT {
         emit Mint(_soul_id);
     }
 
-    // After minting and SBT, user must claim ownership of SBT by
+    // After minting and SBT, user must claim ownership of SBT by sending his hashed data to this contract
     function claim(PersonalDataHashed memory _soulData)
         external
         mintedNotClaimedModifier(soulIdOfAddress[msg.sender])
@@ -136,12 +136,12 @@ contract SBT {
 
     // Returns true, if there is an SBT for given address.
     function hasSoul(address _soul) external view returns (bool) {
-        return soulIdOfAddress[_soul] != 0;
+        return soulIdOfAddress[_soul] != 0; // FIXME: minted not claimed must be false
     }
 
     // Returns SBT of given address, if there is one; otherwise throws an error.
     function getSoul(address _soul) external view returns (Soul memory) {
-        require(soulIdOfAddress[_soul] != 0, "Soul doesn't exist");
+        require(soulIdOfAddress[_soul] != 0, "Soul doesn't exist"); // FIXME: only operator or owner
         return souls[soulIdOfAddress[_soul]];
     }
 

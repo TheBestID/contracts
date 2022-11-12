@@ -18,3 +18,7 @@ def isolate(fn_isolation):
 @pytest.fixture(scope="module")
 def sbt(SBT, accounts):
     return SBT.deploy({'from': accounts[0]})
+
+@pytest.fixture(scope="module")
+def achievement(SBT_achievement, accounts):
+    return SBT_achievement.deploy({'from': accounts[0]})
