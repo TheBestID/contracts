@@ -38,15 +38,20 @@ contract SBT {
     }
 
     address public operator;
+    address public kAchevementsContract =
+        0x8016619281F888d011c84d2E2a5348d9417c775B;
 
+    bool achevementsContractIsSet;
     event Mint(uint _soul_id);
     event Claim(uint _soul_id);
     event MintAchievement(uint _soul_id);
     event Burn(uint _soul_id_to_burn);
     event Update(uint _soul_id_to_update);
+    event SetAchevementsContractAddress(address _new_address);
 
     constructor() {
         operator = msg.sender;
+        achevementsContractIsSet = false;
     }
 
     mapping(uint => address) private addressOfSoul; //soul_id => address of owner
@@ -66,6 +71,20 @@ contract SBT {
         );
         hashedData.github_hash = keccak256(abi.encodePacked(_data.github_url));
         return hashedData;
+    }
+
+    function setAchevementsContractAddress(address _new_address) external {
+        require(
+            msg.sender == operator,
+            "Only this contract can set this address"
+        );
+        require(
+            achevementsContractIsSet == false,
+            "Achevements contract address is already set"
+        );
+        kAchevementsContract = _new_address;
+        achevementsContractIsSet = true;
+        emit SetAchevementsContractAddress(_new_address);
     }
 
     // Mints the SBT for given address and with given soul_id. Can be called only by this contract.
@@ -93,8 +112,16 @@ contract SBT {
     }
 
     // Passes the user id to the achievement contract
-    function getUserId(address _soul) external soulExists(soulIdOfAddress[msg.sender]) view returns (uint) {
-        require(msg.sender == kAchevementsContract, "Only achievement contract can view id");
+    function getUserId(address _soul)
+        external
+        view
+        soulExists(soulIdOfAddress[_soul])
+        returns (uint)
+    {
+        require(
+            msg.sender == kAchevementsContract,
+            "Only achievement contract can view id"
+        );
         return soulIdOfAddress[_soul];
     }
 
