@@ -147,13 +147,4 @@ contract SBT {
     {
         return souls[soulIdOfAddress[msg.sender]].hashedData;
     }
-
-    function getUserId(address _addr)
-        external
-        view
-        soulExists(soulIdOfAddress[_addr])
-        returns (uint)
-    {
-        return soulIdOfAddress[_addr];
-    }
 }
