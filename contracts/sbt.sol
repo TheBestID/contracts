@@ -111,10 +111,10 @@ contract SBT {
         emit Claim(_soul_id);
     }
 
-    // Passes the user id to the achievement contract
-    function getUserId(address _soul)
-        external
-        view
+    // Passes the user address to the achievement contract
+    function getUserId(address _soul) 
+        external 
+        view 
         soulExists(soulIdOfAddress[_soul])
         returns (uint)
     {
@@ -123,6 +123,16 @@ contract SBT {
             "Only achievement contract can view id"
         );
         return soulIdOfAddress[_soul];
+    }
+    
+    // Passes the user id to the achievement contract
+    function getUserAddress(uint _soul_id) external view returns (address)
+    {
+        require(
+            msg.sender == kAchevementsContract,
+            "Only achievement contract can view id"
+        );
+        return addressOfSoul[_soul_id];
     }
 
     // Deletes SBT of msg.sender from storage.
