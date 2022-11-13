@@ -11,7 +11,6 @@ contract SBT_achievement {
         uint achievement_type;
 
         uint issuer;
-        bool can_owner_be_changed;
         uint owner;
         bool is_achievement_accepted;
 
@@ -21,26 +20,26 @@ contract SBT_achievement {
         string data_address;
     }
 
-    // [0, 0, 1, false, 0, false, 0, false, "0"]
-    mapping (uint => Achievement) private achievements;
-    mapping (uint => uint[]) private issuersAchievements;
-    mapping (uint => uint[]) private usersAchievements;
+    // [321, 0, 123, 0, false, 0, false, "0"]
+    mapping(uint => Achievement) private achievements;
+    mapping(uint => uint[]) private issuersAchievements;
+    mapping(uint => uint[]) private usersAchievements;
 
     address public operator;
-    address public kSBTContract = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
 
+    address public kSBTContract;
     SBT_interface SBT;
+    bool SBTContractIsSet;
+
     event Mint(uint achievement_id);
     event Burn(uint achievement_id);
     event Update(uint achievement_id);
     event Accept(uint achievement_id);
     event Verify(uint achievement_id);
-    bool SBTContractIsSet;
 
     constructor() {
-      operator = msg.sender;
-    //   SBT = SBT_interface(kSBTContract);
-      SBTContractIsSet = false;
+        operator = msg.sender;
+        SBTContractIsSet = false;
     }
 
     function setSBTContractAddress(address _new_address) external {
@@ -55,12 +54,11 @@ contract SBT_achievement {
         kSBTContract = _new_address;
         SBTContractIsSet = true;
         SBT = SBT_interface(kSBTContract);
-        // emit SetAchevementsContractAddress(_new_address);
     }
 
 
     function mint(Achievement memory _achievementData) external {
-        // FIXME: must be unique achievement_id
+        require(achievements[_achievementData.achievement_id].issuer != 0, "Achievement id already exists");
         require(SBT.getUserId(msg.sender) == _achievementData.issuer, "Only you can be an issuer");
         achievements[_achievementData.achievement_id] = _achievementData;
         issuersAchievements[_achievementData.issuer].push(_achievementData.achievement_id);
@@ -70,13 +68,13 @@ contract SBT_achievement {
 
     function burn(uint _achievementId) external {
         require(SBT.getUserId(msg.sender) == achievements[_achievementId].issuer, "Only issuer can delete an achievement");
-        for (uint i=0; i<issuersAchievements[achievements[_achievementId].issuer].length; i++) {
+        for (uint i = 0; i < issuersAchievements[achievements[_achievementId].issuer].length; i++) {
             if (_achievementId == issuersAchievements[achievements[_achievementId].issuer][i]) {
                 delete issuersAchievements[achievements[_achievementId].issuer][i];
                 break;
             }
         }
-        for (uint i=0; i<usersAchievements[achievements[_achievementId].owner].length; i++) {
+        for (uint i = 0; i < usersAchievements[achievements[_achievementId].owner].length; i++) {
             if (_achievementId == usersAchievements[achievements[_achievementId].owner][i]) {
                 delete usersAchievements[achievements[_achievementId].owner][i];
                 break;
@@ -88,9 +86,8 @@ contract SBT_achievement {
 
     function updateOwner(uint _achievementId, address _newOwner) external {
         require(SBT.getUserId(msg.sender) == achievements[_achievementId].issuer, "Only issuer can change an owner");
-        require(achievements[_achievementId].can_owner_be_changed, "Owner of this achievement can not be changed");
+        require(achievements[_achievementId].owner == 0, "Owner of this achievement can not be changed");
         achievements[_achievementId].owner = SBT.getUserId(_newOwner);
-        achievements[_achievementId].can_owner_be_changed = false;
         emit Update(_achievementId);
     }
 
@@ -107,11 +104,11 @@ contract SBT_achievement {
     }
 
     function getAchievementInfo(uint _achievementId) external view returns (Achievement memory) {
-        require(msg.sender == operator || 
-                SBT.getUserId(msg.sender) == achievements[_achievementId].issuer ||
-                SBT.getUserId(msg.sender) == achievements[_achievementId].owner ||
-                SBT.getUserId(msg.sender) == achievements[_achievementId].verifier, 
-                "Only operator, issuer, owner or verifier can get achievement info");
+        require(msg.sender == operator ||
+        SBT.getUserId(msg.sender) == achievements[_achievementId].issuer ||
+        SBT.getUserId(msg.sender) == achievements[_achievementId].owner ||
+            SBT.getUserId(msg.sender) == achievements[_achievementId].verifier,
+            "Only operator, issuer, owner or verifier can get achievement info");
         return achievements[_achievementId];
     }
 
