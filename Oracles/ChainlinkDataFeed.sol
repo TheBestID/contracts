@@ -19,9 +19,9 @@ contract ChainlinkPriceFeed {
     constructor() {
         ETHprice = AggregatorV3Interface(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
         BTCprice = AggregatorV3Interface(0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c);
-        LINKprice = AggregatorV3Interface(web3.utils.toChecksumAddress('0x2c1d072e956affc0d435cb7ac38ef18d24d9127c'));
-        SOLprice = AggregatorV3Interface(0x4ffc43a60e009b551865a93d232e33fce9f01507);
-        MATICprice = AggregatorV3Interface(0xab594600376ec9fd91f8e885dadf0ce036862de0);
+        LINKprice = AggregatorV3Interface(0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c);
+        SOLprice = AggregatorV3Interface(0x4ffC43a60e009B551865A93d232E33Fce9f01507);
+        MATICprice = AggregatorV3Interface(0xAB594600376Ec9fD91F8e885dADF0CE036862dE0);
     }
 
     function PriceETH() public view returns (int) {
