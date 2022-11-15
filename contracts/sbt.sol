@@ -59,20 +59,7 @@ contract SBT {
     mapping(uint => Soul) private souls;
     mapping(uint => bool) private mintedNotClaimed;
 
-    // Function that hashes content of user's hashedData. Must be rewritten if PersonalData fields change.
-    function hashPersonalData(PersonalData memory _data)
-        internal
-        pure
-        returns (PersonalDataHashed memory)
-    {
-        PersonalDataHashed memory hashedData;
-        hashedData.email_address_hash = keccak256(
-            abi.encodePacked(_data.email_address)
-        );
-        hashedData.github_hash = keccak256(abi.encodePacked(_data.github_url));
-        return hashedData;
-    }
-
+    // Sets achevements contract address; can be called only once, and must be called just after deployment of achevements contract
     function setAchevementsContractAddress(address _new_address) external {
         require(
             msg.sender == operator,
@@ -112,9 +99,9 @@ contract SBT {
     }
 
     // Passes the user address to the achievement contract
-    function getUserId(address _soul) 
-        external 
-        view 
+    function getUserId(address _soul)
+        external
+        view
         soulExists(soulIdOfAddress[_soul])
         returns (uint)
     {
@@ -124,10 +111,9 @@ contract SBT {
         );
         return soulIdOfAddress[_soul];
     }
-    
+
     // Passes the user id to the achievement contract
-    function getUserAddress(uint _soul_id) external view returns (address)
-    {
+    function getUserAddress(uint _soul_id) external view returns (address) {
         require(
             msg.sender == kAchevementsContract,
             "Only achievement contract can view id"
@@ -146,12 +132,20 @@ contract SBT {
 
     // Returns true, if there is an SBT for given address.
     function hasSoul(address _soul) external view returns (bool) {
-        return soulIdOfAddress[_soul] != 0; // FIXME: minted not claimed must be false
+        return souls[soulIdOfAddress[_soul]].soul_id != 0;
     }
 
     // Returns SBT of given address, if there is one; otherwise throws an error.
-    function getSoul(address _soul) external view returns (Soul memory) {
-        require(soulIdOfAddress[_soul] != 0, "Soul doesn't exist"); // FIXME: only operator or owner
+    function getSoul(address _soul)
+        external
+        view
+        soulExists(soulIdOfAddress[msg.sender])
+        returns (Soul memory)
+    {
+        require(
+            operator == msg.sender || _soul == msg.sender,
+            "Only this contract or user can access this data"
+        );
         return souls[soulIdOfAddress[_soul]];
     }
 
