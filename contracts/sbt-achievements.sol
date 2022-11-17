@@ -38,6 +38,7 @@ contract SBT_achievement {
     event Update(uint achievement_id);
     event Accept(uint achievement_id);
     event Verify(uint achievement_id, uint balance_send);
+    event Split(uint achievement_id, uint[] newOwners, uint[] newAchievementIds);
 
     constructor() {
         operator = msg.sender;
@@ -59,9 +60,9 @@ contract SBT_achievement {
     }
 
 
-    function mint(Achievement memory _achievementData) external {
+    function mint(Achievement memory _achievementData) public {
         require(achievements[_achievementData.achievement_id].issuer != 0, "Achievement id already exists");
-        require(SBT.getUserId(msg.sender) == _achievementData.issuer, "Only you can be an issuer");
+        require(msg.sender == operator || SBT.getUserId(msg.sender) == _achievementData.issuer, "Only you can be an issuer");
         achievements[_achievementData.achievement_id] = _achievementData;
         issuersAchievements[_achievementData.issuer].push(_achievementData.achievement_id);
         usersAchievements[_achievementData.owner].push(_achievementData.achievement_id);
@@ -115,6 +116,26 @@ contract SBT_achievement {
         achievements[_achievementId].is_verified = true;
 
         emit Verify(_achievementId, balance);
+    }
+
+    function splitAchievement(uint _achievementId, uint[] memory _newOwners, uint[] memory _newAchievementIds) external {
+        require(SBT.getUserId(msg.sender) == achievements[_achievementId].verifier, "Only verifier can verify an achievement");
+        achievements[_achievementId].balance /= _newOwners.length + 1;
+        for (uint i = 0; i < _newOwners.length; i++) {
+            Achievement memory achievementData = Achievement({
+                achievement_id: _newAchievementIds[i],
+                achievement_type: achievements[_achievementId].achievement_type,
+                issuer: achievements[_achievementId].issuer,
+                owner: _newOwners[i],
+                is_accepted: false,
+                verifier: achievements[_achievementId].verifier,
+                is_verified: false,
+                data_address: achievements[_achievementId].data_address,
+                balance: achievements[_achievementId].balance
+            });
+            mint(achievementData);
+        }
+        emit Split(_achievementId, _newOwners, _newAchievementIds);
     }
 
     function getAchievementInfo(uint _achievementId) external view returns (Achievement memory) {
