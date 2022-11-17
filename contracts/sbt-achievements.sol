@@ -119,7 +119,7 @@ contract SBT_achievement {
     }
 
     function splitAchievement(uint _achievementId, uint[] memory _newOwners, uint[] memory _newAchievementIds) external {
-        require(SBT.getUserId(msg.sender) == achievements[_achievementId].verifier, "Only verifier can verify an achievement");
+        require(SBT.getUserId(msg.sender) == achievements[_achievementId].verifier, "Only verifier can split an achievement");
         achievements[_achievementId].balance /= _newOwners.length + 1;
         for (uint i = 0; i < _newOwners.length; i++) {
             Achievement memory achievementData = Achievement({
