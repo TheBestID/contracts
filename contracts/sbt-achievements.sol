@@ -63,6 +63,9 @@ contract SBT_achievement {
     function mint(Achievement memory _achievementData) public {
         require(achievements[_achievementData.achievement_id].issuer != 0, "Achievement id already exists");
         require(msg.sender == operator || SBT.getUserId(msg.sender) == _achievementData.issuer, "Only you can be an issuer");
+        if (msg.sender != operator) {
+            _achievementData.balance = 0;
+        }
         achievements[_achievementData.achievement_id] = _achievementData;
         issuersAchievements[_achievementData.issuer].push(_achievementData.achievement_id);
         usersAchievements[_achievementData.owner].push(_achievementData.achievement_id);
@@ -120,6 +123,7 @@ contract SBT_achievement {
 
     function splitAchievement(uint _achievementId, uint[] memory _newOwners, uint[] memory _newAchievementIds) external {
         require(SBT.getUserId(msg.sender) == achievements[_achievementId].verifier, "Only verifier can split an achievement");
+        uint old_balance = achievements[_achievementId].balance;
         achievements[_achievementId].balance /= _newOwners.length + 1;
         for (uint i = 0; i < _newOwners.length; i++) {
             Achievement memory achievementData = Achievement({
@@ -135,6 +139,8 @@ contract SBT_achievement {
             });
             mint(achievementData);
         }
+        address payable verifier = payable(SBT.getUserAddress(achievements[_achievementId].verifier));
+        verifier.transfer(achievements[_achievementId].balance * (_newOwners.length + 1) - old_balance);
         emit Split(_achievementId, _newOwners, _newAchievementIds);
     }
 
