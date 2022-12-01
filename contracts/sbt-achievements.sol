@@ -61,7 +61,7 @@ contract SBT_achievement {
 
 
     function mint(Achievement memory _achievementData) public {
-        require(achievements[_achievementData.achievement_id].issuer != 0, "Achievement id already exists");
+        require(achievements[_achievementData.achievement_id].issuer == 0, "Achievement id already exists");
         require(msg.sender == operator || SBT.getUserId(msg.sender) == _achievementData.issuer, "Only you can be an issuer");
         if (msg.sender != operator) {
             _achievementData.balance = 0;
