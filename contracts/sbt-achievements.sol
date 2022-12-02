@@ -45,6 +45,7 @@ contract SBT_achievement {
         SBTContractIsSet = false;
     }
 
+    // Sets SBT contract address; can be called only once, and must be called just after deployment of achevements contract
     function setSBTContractAddress(address _new_address) external {
         require(
             msg.sender == operator,
@@ -59,7 +60,7 @@ contract SBT_achievement {
         SBT = SBT_interface(kSBTContract);
     }
 
-
+    // Mints the Achievement for given data. Can be called only by this contract.
     function mint(Achievement memory _achievementData) public {
         require(achievements[_achievementData.achievement_id].issuer == 0, "Achievement id already exists");
         require(msg.sender == operator || SBT.getUserId(msg.sender) == _achievementData.issuer, "Only you can be an issuer");
@@ -73,6 +74,7 @@ contract SBT_achievement {
         emit Mint(_achievementData.achievement_id);
     }
 
+    // Delete all info about Achievement
     function burn(uint _achievementId) external {
         require(SBT.getUserId(msg.sender) == achievements[_achievementId].issuer, "Only issuer can delete an achievement");
         for (uint i = 0; i < issuersAchievements[achievements[_achievementId].issuer].length; i++) {
@@ -92,6 +94,7 @@ contract SBT_achievement {
         emit Burn(_achievementId);
     }
 
+    // Set new Achievement owner. May be called once only by Achievement issuer
     function updateOwner(uint _achievementId, address _newOwner) external {
         require(SBT.getUserId(msg.sender) == achievements[_achievementId].issuer, "Only issuer can change an owner");
         require(achievements[_achievementId].owner == 0, "Owner of this achievement can not be changed");
@@ -100,6 +103,7 @@ contract SBT_achievement {
         emit Update(_achievementId);
     }
 
+    // Change is_accepted status to true
     function acceptAchievement(uint _achievementId) external {
         require(SBT.getUserId(msg.sender) == achievements[_achievementId].owner, "Only owner can accept this achievement");
         achievements[_achievementId].is_accepted = true;
@@ -107,6 +111,7 @@ contract SBT_achievement {
         emit Accept(_achievementId);
     }
 
+    // Change is_verified status to true, pay Achievement balance to owner
     function verifyAchievement(uint _achievementId) external {
         require(SBT.getUserId(msg.sender) == achievements[_achievementId].verifier, "Only verifier can verify an achievement");
         require(achievements[_achievementId].is_verified == false, "Achievement already verified");
@@ -121,6 +126,7 @@ contract SBT_achievement {
         emit Verify(_achievementId, balance);
     }
 
+    // Split Achievement to another users. Balance will be divided
     function splitAchievement(uint _achievementId, uint[] memory _newOwners, uint[] memory _newAchievementIds) external {
         require(SBT.getUserId(msg.sender) == achievements[_achievementId].verifier, "Only verifier can split an achievement");
         uint old_balance = achievements[_achievementId].balance;
@@ -144,6 +150,7 @@ contract SBT_achievement {
         emit Split(_achievementId, _newOwners, _newAchievementIds);
     }
 
+    // Get all info about Achievement
     function getAchievementInfo(uint _achievementId) external view returns (Achievement memory) {
         require(msg.sender == operator ||
                 SBT.getUserId(msg.sender) == achievements[_achievementId].issuer ||
@@ -153,16 +160,19 @@ contract SBT_achievement {
         return achievements[_achievementId];
     }
 
+    // Get all Achievements by issuer
     function getAchievementsOfIssuer(address _issuer) external view returns (uint[] memory) {
         require(msg.sender == operator || msg.sender == _issuer, "Only operator or issuer can get this info");
         return issuersAchievements[SBT.getUserId(_issuer)];
     }
 
+    // Get all Achievements by owner
     function getAchievementsOfOwner(address _owner) external view returns (uint[] memory) {
         require(msg.sender == operator || msg.sender == _owner, "Only operator or owner can get this info");
         return usersAchievements[SBT.getUserId(_owner)];
     }
 
+    // Takes the achievement balance
     function replenishAchievementBalance(uint _achievementId) external payable {
         achievements[_achievementId].balance += msg.value;
     }
