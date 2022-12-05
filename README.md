@@ -12,7 +12,7 @@ Second is contract of achievements. Any Soul can mint an achievement and give it
 - `mint` - mints SBT for user. It can only be called by our platform, because user must be verified there.
 - `claim` - user must claim his Soul and store his data there in hashed format. Otherwise Soul wouldn't exist.
 - `burn` - the user can burn his Soul anytime he wants. Note that the Soul must be claimed to be burned.
-- `verifyDataCorrectness` - allows user to verify, that their data stored in our app is it's own and it didn't change.
+- `getSoulData` - allows user to verify, that their data stored in our app is it's own and it didn't change.
 
 ### [Achievements](contracts/sbt-achievements.sol)
 - Data stored in Achievement:
