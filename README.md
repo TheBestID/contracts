@@ -1,4 +1,4 @@
-# SoulDev contracts on Solidity
+# SoulDev contracts on Ethereum
 
 ## Main info
 Main part consists of two contracts - `sbt.sol` and `sbt-achievements.sol`. 
